@@ -1,0 +1,32 @@
+.cascading-right {
+    margin-right: -50px;
+  }
+
+  @media (max-width: 991.98px) {
+    .cascading-right {
+      margin-right: 0;
+    }
+  }
+
+  
+  body {
+    background-color: #e0e0e0;
+  }
+
+.img-signin{
+    height: 90vh;
+}
+
+.error-input {
+    border-color: red;
+}
+
+
+span.error-messages{
+  color: red;
+  font-size: 12px;
+}
+
+.nav-bg {
+  background-color:  #e3f2fd;
+}
