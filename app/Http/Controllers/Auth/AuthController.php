@@ -9,6 +9,8 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -23,6 +25,9 @@ class AuthController extends Controller
      */
     public function index()
     {
+        //delete the session for upload image
+        session()->forget('tempImagePath');
+        session()->forget('path');
         return view('authentication.login');
     }
 
@@ -70,7 +75,6 @@ class AuthController extends Controller
             $allUsers = User::all();
             return $this->sendResponse(UserResource::collection($allUsers), 'Fetch all User Success');
         }
-
         //need to put select so that table can be dynamic
         $allUsers = User::select(['id', 'firstName', 'email', 'role'])->get();
         return view('pages.dashboard', ['userData' => $allUsers]);
@@ -91,12 +95,60 @@ class AuthController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(UserInfoRequest $request)
+    public function store(Request $request)
     {
-        $validated = $request->validated();
-        $validated['password'] = bcrypt($validated['password']);
-        $user = User::create($validated);
+        
+        $validator = Validator::make($request->all(), [
+            'firstName' => 'required|max:10',
+            'lastName' => 'required|max:10',
+            'email' => ['required', 'unique:users,email'],
+            'password' => 'required|confirmed|min:3',
+            'gender' => 'required',
+            'image' => 'image',
+        ]);
 
+        //check if a file is upload and if no error and if no session
+        //if Storage is used it is relative the Storage/app/path
+        if($request->hasFile('image') && !$validator->errors()->has('image')){
+            // upload image temporary
+            //this path has public/
+            $path = Storage::putFileAs('public/temporary', $request->file('image'), $request->file('image')->getClientOriginalName());
+            //this will remove the /public in path and add storage/ in the path
+            //this path is needed to show image on the UI
+            $tempStorage = Storage::url($path);
+            session(['tempImagePath' => $tempStorage ?? '', 'path' => $path]);
+        }
+        //if error in validate redirect with input
+        if ($validator->fails()) {
+            return redirect('showRegister')
+                        ->withErrors($validator)
+                        ->withInput();
+        }
+        $validatedData = $validator->validated();
+        
+        $validatedData['password'] = bcrypt($validatedData['password']);
+        if($request->hasFile('image')){
+            $newFileName =  $validatedData['lastName'] . time(). '.' . $request->file('image')->getClientOriginalExtension();
+            $validatedData['image'] = $newFileName;
+        }
+        //save data to the DB
+        $user = User::create($validatedData);
+
+        //check if session exist then copy the file to img then delete temporary save
+        if(session()->has('tempImagePath')){
+            //copy the temp save file
+            Storage::copy(session('path'), 'public/img/'. $newFileName);
+            
+            session()->forget('tempImagePath');
+            session()->forget('path');
+        }
+        //to delete we need the path with public/
+        // Get an array of all files within the directory
+        $files = Storage::files('public/temporary');
+        // Loop through and delete each file
+        foreach ($files as $file) {
+            Storage::delete($file);
+        }
         return redirect()->route('login')->with('message', $user->email . ' has been Register successfully');
     }
 

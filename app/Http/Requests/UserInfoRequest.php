@@ -30,6 +30,7 @@ class UserInfoRequest extends FormRequest
             'email' => ['required', 'unique:users,email'],
             'password' => 'required|confirmed|min:3',
             'gender' => 'required',
+            'image' => 'image',
         ];
     }
 

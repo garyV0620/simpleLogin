@@ -59,16 +59,42 @@
     </div>
 
     <div class="form-outline mb-4">
-        <input type="password" id="password_confirmation"  name="password_confirmation" 
-        @class(['form-control', 'error-input'=> $errors->has('password')]) />
-        
-        <x-errorSpan :field="_('password_confirmation')" />
+      <input type="password" id="password_confirmation"  name="password_confirmation" 
+      @class(['form-control', 'error-input'=> $errors->has('password')]) />
+      
+      <x-errorSpan :field="_('password_confirmation')" />
 
-        <label class="form-label" for="password_confirmation">Confirm Password</label>
+      <label class="form-label" for="password_confirmation">Confirm Password</label>
+    </div>
+    <div class="form-outline mb-4 d-flex justify-content-center">
+      <img id="imagePreview" src="{{ asset(session('tempImagePath')) }}" alt="Image Preview" style=" @if(!session('tempImagePath')) display: none; @endif max-width: 200px; max-height: 400px;">
+    </div>
+    <div class="form-outline mb-4">
+      <div class="input-group mb-3">
+        <input type="file" class="form-control" id="image" name="image" onchange="previewImage(this)" >
+        <label class="input-group-text" for="image">Upload</label>
       </div>
+      <x-errorSpan :field="_('image')" />
+    </div>
+    
     <!-- Submit button -->
     <button type="submit" class="btn btn-primary btn-block mb-4 form-control">
       Sign up
     </button>
     <p>Already have an Account? <a href="@if(!isset($userId)) {{ route('login') }}  @else  {{ route('dashboard') }} @endif">Login Now</a></p>
   </form>
+  <script>
+    function previewImage(input) {
+    var preview = document.getElementById('imagePreview');
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+  </script>
